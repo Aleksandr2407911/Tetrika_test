@@ -1,48 +1,55 @@
-def check_in(
-    bounders: list[int], for_check_intervals: list[tuple[int, int]]
-) -> list[tuple[int, int]]:
-    clear_evens_odds = []
+class LessonAttendance:
+    def __init__(self, intervals: dict[str, list[int]]):
+        self.lesson_start, self.lesson_end = intervals["lesson"]
+        self.pupil_intervals = self.get_intervals(intervals["pupil"])
+        self.tutor_intervals = self.get_intervals(intervals["tutor"])
 
-    for time_in, time_out in for_check_intervals:
-        if time_out < bounders[0] or time_in > bounders[1]:
-            continue
-        clear_evens_odds.append((max(time_in, bounders[0]), min(time_out, bounders[1])))
+    def get_intervals(self, data: list[int]) -> list[tuple[int, int]]:
+        intervals = []
+        for i in range(0, len(data), 2):
+            start = data[i]
+            end = data[i + 1]
+            if end < self.lesson_start or start > self.lesson_end:
+                continue
+            intervals.append((max(start, self.lesson_start), min(end, self.lesson_end)))
+        return intervals
 
-    return clear_evens_odds
+    def merge_intervals(
+        self, intervals: list[tuple[int, int]]
+    ) -> list[tuple[int, int]]:
+        if not intervals:
+            return []
+        intervals.sort()
+        merged = [intervals[0]]
+        for current in intervals[1:]:
+            last = merged[-1]
+            if current[0] <= last[1]:
+                merged[-1] = (last[0], max(last[1], current[1]))
+            else:
+                merged.append(current)
+        return merged
 
+    def calculate_total_time(self) -> int:
+        pupil_intervals = self.merge_intervals(self.pupil_intervals)
+        tutor_intervals = self.merge_intervals(self.tutor_intervals)
 
-def trim_edges(intervals: list[int], lesson: list[int]) -> list[tuple[int, int]]:
-    count = 0
-    evens = []
-    odds = []
-    for i in intervals:
-        if count % 2 == 0:
-            evens.append(i)
-        else:
-            odds.append(i)
-        count += 1
-    evens_odds = list(zip(evens, odds))
-    clear_evens_odds = check_in(lesson, evens_odds)
-    return clear_evens_odds
+        total_time = 0
+        for pupil_start, pupil_end in pupil_intervals:
+            for tutor_start, tutor_end in tutor_intervals:
+                start = max(pupil_start, tutor_start)
+                end = min(pupil_end, tutor_end)
+                if start < end:
+                    total_time += end - start
 
+        return total_time
 
-def intersection_time(
-    trim_presences_pupil: list[tuple[int, int]], trim_presences_tutor: list[tuple[int, int]]
-) -> int:
-    total = 0
-    for pupil_time in trim_presences_pupil:
-        for tutor_time in trim_presences_tutor:
-            start = max(pupil_time[0], tutor_time[0])
-            end = min(pupil_time[1], tutor_time[1])
-            if start < end:
-                total += end - start
-    return total
+    def __call__(self) -> int:
+        return self.calculate_total_time()
 
 
 def appearance(intervals: dict[str, list[int]]) -> int:
-    presense_pupil = trim_edges(intervals["pupil"], intervals["lesson"])
-    presense_tutor = trim_edges(intervals["tutor"], intervals["lesson"])
-    return intersection_time(presense_pupil, presense_tutor)
+    attendance = LessonAttendance(intervals)
+    return attendance()
 
 
 tests = [
