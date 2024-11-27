@@ -1,14 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
-import string
-
+russian_uppercase = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 
 class AnimalCounter:
     def __init__(self):
         self.base_url = "https://ru.wikipedia.org"
         self.start_url = f"{self.base_url}/wiki/Категория:Животные_по_алфавиту"
-        self.animals_count = {letter: 0 for letter in string.ascii_uppercase}
+        self.animals_count = {letter: 0 for letter in russian_uppercase}
 
     def get_animals_count(self) -> dict:
         url = self.start_url
